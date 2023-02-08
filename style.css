@@ -1,0 +1,141 @@
+@media screen and (min-width: 426px) {
+    form {
+        border: 1px dotted rgba(225, 225, 225, 0.2);
+        box-shadow: rgba(225, 225, 225, 0.2) 0px 5px 15px;
+    }
+}
+@media screen and (min-width: 375px) {
+    form {
+        width: 375px;
+    }
+}
+
+@media screen and (max-width: 374px) {
+    form {
+        width: 320px;
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: black;
+    overflow: hidden;
+}
+
+form {
+    padding: 1% 0.3%;
+    border-radius: 1em;
+}
+
+table {
+    width: 100%;
+}
+
+thead tr td {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+}
+
+thead tr td::before {
+    content: "";
+    padding-top: 25%;
+    float: left;
+}
+
+thead input {
+    width: 100%;
+    text-align: end;
+    background-color: transparent;
+    border: none;
+    padding: 0 4%;
+}
+
+.visualizer-input {
+    font-size: 1.5rem;
+    color: grey;
+}
+
+.display-input {
+    font-size: 3rem;
+    color: white;
+}
+
+tbody tr {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+tbody tr:last-child {
+    grid-template-columns: 2fr 1fr 1fr;
+}
+
+tbody td {
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+tbody td:not(.double)::before {
+    content: "";
+    padding-top: 100%;
+    float: left;
+}
+
+tbody tr:first-child button {
+    background-color: rgba(225, 225, 225, 0.7);
+    color: black;
+}
+
+tbody td:last-child button {
+    background-color: orange;
+    color: white;
+}
+
+tbody button {
+    width: 80%;
+    height: 80%;
+    border-radius: 3em;
+    font-size: 2rem;
+    border: none;
+    color: white;
+    background-color: rgba(225, 225, 225, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+tbody button::after {
+    content: "";
+    background-color: rgba(225, 225, 225, 0.5);
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+}
+
+tbody button:hover::after {
+    opacity: 1;
+    transition: 0.5s;
+}
+
+.double button {
+    width: 90%;
+    text-align: start;
+    padding: 0 15%;
+}
