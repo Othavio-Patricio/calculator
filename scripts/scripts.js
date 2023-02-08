@@ -1,27 +1,53 @@
 const displayInput = document.querySelector('.display-input');
-const visualizerInput = document.querySelector('.visualizer-input')
-const cleanBtn = document.querySelector('.clean-btn')
+const visualizerInput = document.querySelector('.visualizer-input');
+const cleanBtn = document.querySelector('.clean-btn');
+const numBtns = document.querySelectorAll('.num-btn');
 let currentValue;
 let lastValue;
 let penValue;
 let lastOperation;
 let currentOperation;
+let waitingForInput = true;
+let waitingForOperator = false;
+
+const handler = function(e) {
+  if (!waitingForOperator) {
+    const eValue = e.target.getAttribute('value');
+    if (eValue !== '0') cleanBtn.innerText = 'C';
+    if (waitingForInput) {
+      changeDisplay(eValue);
+      if (eValue !== '0' && displayInput.value !== '0') waitingForInput = false;
+    } else displayInput.value += eValue;
+  }
+  checkSize();
+}
+
+function checkSize(type = 'num') {
+  console.log('checksize')
+  console.log(numBtns[0].getAttribute('listener'))
+  if (displayInput.value.length >= 9 && type === 'num') removeNumberListener();
+  if (type === 'operation') addNumberListener();
+}
 
 if (displayInput.value != 0) cleanBtn.innerText = 'C';
+if (displayInput.value.length < 9) addNumberListener();
 
 window.onload = () => {
-  displayInput.value = '0';
+  changeDisplay('0');
   visualizerInput.value = '';
 }
 
-document.querySelectorAll('.num-btn').forEach(e => {
-  e.addEventListener('click', () => {
-    const eValue = e.getAttribute('value');
-    if (eValue !== '0') cleanBtn.innerText = 'C';
-    if (displayInput.value === '0') displayInput.value = eValue;
-    else displayInput.value += eValue;
+function addNumberListener() {
+  numBtns.forEach(e => {
+    e.addEventListener('click', handler);
   });
-});
+}
+
+function removeNumberListener() {
+  numBtns.forEach(e => {
+    e.removeEventListener('click', handler);
+  });
+}
 
 const sumBtn = document.querySelector('.sum-btn');
 const subBtn = document.querySelector('.sub-btn');
@@ -29,8 +55,10 @@ const divBtn = document.querySelector('.div-btn');
 const multiBtn = document.querySelector('.multi-btn');
 const diffBtn = document.querySelector('.diff-btn');
 const equalBtn = document.querySelector('.equal-btn');
+const perBtn = document.querySelector('.per-btn');
 
 function operators(nextOperation) {
+  checkSize('operation');
   const inputValue = Number(displayInput.value);
   let newValue;
   if (currentOperation) {
@@ -39,10 +67,10 @@ function operators(nextOperation) {
       lastValue = inputValue;
       penValue = currentValue
       currentValue = newValue;
-      changeVisualizer(penValue, lastValue, currentValue, currentOperation)
+      changeVisualizer(penValue, lastValue, currentValue, currentOperation);
+      changeDisplay(currentValue)
       lastOperation = currentOperation;
       currentOperation = nextOperation;
-      displayInput.value = '0';
     } else {
       currentOperation = nextOperation;
     }
@@ -51,8 +79,15 @@ function operators(nextOperation) {
     currentValue = inputValue;
     currentOperation = nextOperation;
     changeVisualizer(displayInput.value)
-    displayInput.value = '0';
+    changeDisplay(currentValue, true);
+    waitingForInput = true;
+    waitingForOperator = false;
+    return;
   }
+  if (typeof currentValue === 'number' && !currentOperation) currentOperation = nextOperation;
+  changeDisplay(currentValue);
+  waitingForInput = true;
+  waitingForOperator = false;
 }
 
 sumBtn.addEventListener('click', () => {
@@ -72,7 +107,7 @@ multiBtn.addEventListener('click', () => {
 });
 
 diffBtn.addEventListener('click', () => {
-  displayInput.value = diff(Number(displayInput.value));
+  changeDisplay(diff(Number(displayInput.value)));
 });
 
 cleanBtn.addEventListener('click', (e) => {
@@ -81,11 +116,37 @@ cleanBtn.addEventListener('click', (e) => {
 
 equalBtn.addEventListener('click', () => {
   if (typeof currentValue === 'number') {
+    checkSize('operation');
     const inputValue = Number(displayInput.value);
     newValue = currentOperation(currentValue, inputValue)
     displayInput.value = currentValue;
     changeVisualizer(currentValue, inputValue, newValue, currentOperation);
+    changeDisplay(newValue)
   }
+});
+
+perBtn.addEventListener('click', () => {
+  checkSize('operation');
+  const inputValue = Number(displayInput.value)
+  let newValue;
+  if (typeof currentValue !== 'number') {
+    newValue = per(inputValue);
+    changeVisualizer(inputValue, 0, newValue, per)
+    changeDisplay(newValue);
+  }
+  if (typeof currentValue === 'number') {
+    currentValue = currentOperation(currentValue, inputValue);
+    newValue = per(currentValue);
+    lastValue = null;
+    currentOperation = null;
+    changeVisualizer(currentValue, inputValue, newValue, currentOperation);
+    changeDisplay(newValue)
+  }
+  waitingForInput = true;
+  currentValue = null
+  lastValue = null;
+  currentOperation = null;
+  waitingForOperator = true;
 });
 
 function sum(num1 = 0, num2 = num1) {
@@ -113,15 +174,24 @@ function diff(num = 0) {
 }
 
 function clear(e) {
+  checkSize('operation');
   visualizerInput.value = '';
-  displayInput.value = '0';
+  changeDisplay('0');
   currentValue = null
   lastValue = null;
   currentOperation = null;
   e.target.innerText = 'AC';
+  waitingForInput = true;
+  waitingForOperator = false;
+}
+
+function changeDisplay(num, ifChoice = false) {
+  if (ifChoice) displayInput.value = num
+  else displayInput.value = toFixedNine(num);
 }
 
 function changeVisualizer(pen = 0, num2 = 0, num1 = 0, type = sum) {
+  // const toFixed = toFixedNine(pen, num1, num2);
   if (typeof pen === 'string') {
     visualizerInput.value = pen;
     return;
@@ -144,5 +214,13 @@ function changeVisualizer(pen = 0, num2 = 0, num1 = 0, type = sum) {
       visualizerInput.value = `${pen} x ${num2} = ${num1}`;
       break;
     }
+    case per: {
+      visualizerInput.value = `${pen}% = ${num1}`;
+      break;
+    }
   }
+}
+
+function round () {
+  
 }
