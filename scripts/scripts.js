@@ -19,26 +19,7 @@ let currentOperation;
 let waitingForInput = true;
 let waitingForOperator = false;
 let hasDot = false;
-
-const handler = function(e) {
-  if (e.target.getAttribute('value') === '.' && hasDot) {
-    return;
-  }
-  if (!waitingForOperator) { // blocks number interaction if true
-    const eValue = e.target.getAttribute('value');
-    if (eValue !== '0') cleanBtn.innerText = 'C';
-    if (waitingForInput) {
-      if (e.target.getAttribute('value') === '.') changeDisplay('0.')
-      else changeDisplay(eValue);
-      if (currentValue) changeVisualizer(currentValue.toString());
-      if (eValue !== '0' && displayInput.value !== '0') waitingForInput = false;
-    } else displayInput.value += eValue;
-    if (e.target.getAttribute('value') === '.') {
-      hasDot = true;
-    }
-  }
-  checkSize();
-}
+let toClear = false;
 
 window.onload = () => {
   cleanBtn.innerText = 'AC'
@@ -57,23 +38,42 @@ function preventStart() {
 }
 
 function checkSize(type = 'num') {
-  if (displayInput.value.length >= 11 && type === 'num') removeNumberListener();
-  if (type === 'operation') addNumberListener();
+  if (displayInput.value.length >= 11 && type === 'num') waitingForOperator = true;
 }
 
 function addNumberListener() {
   numBtns.forEach(e => {
-    e.addEventListener('click', handler);
+    e.addEventListener('click', (e) => {
+      if (toClear) clear(cleanBtn)
+      if (e.target.getAttribute('value') === '.' && hasDot) {
+        return;
+      }
+      if (!waitingForOperator) { // blocks number interaction if true
+        const eValue = e.target.getAttribute('value');
+        if (eValue !== '0') cleanBtn.innerText = 'C';
+        if (waitingForInput) {
+          if (e.target.getAttribute('value') === '.') changeDisplay('0.')
+          else changeDisplay(eValue);
+          if (currentValue) changeVisualizer(currentValue.toString());
+          if (eValue !== '0' && displayInput.value !== '0') waitingForInput = false;
+        } else displayInput.value += eValue;
+        if (e.target.getAttribute('value') === '.') {
+          hasDot = true;
+        }
+      }
+      checkSize();
+    });
   });
 }
 
-function removeNumberListener() {
-  numBtns.forEach(e => {
-    e.removeEventListener('click', handler);
-  });
-}
+// function removeNumberListener() {
+//   numBtns.forEach(e => {
+//     e.removeEventListener('click', handler);
+//   });
+// }
 
 function operators(nextOperation) {
+  if (toClear) clear(cleanBtn)
   checkSize('operation');
   const inputValue = Number(displayInput.value);
   let newValue;
@@ -124,6 +124,7 @@ multiBtn.addEventListener('click', () => {
 });
 
 diffBtn.addEventListener('click', () => {
+  if (toClear) clear(cleanBtn)
   if (!waitingForInput) changeDisplay(diff(Number(displayInput.value)));
 });
 
@@ -140,6 +141,7 @@ equalBtn.addEventListener('click', () => {
     changeVisualizer(currentValue, inputValue, currentOperation);
     changeDisplay(newValue)
     hasDot = false;
+    toClear = true;
   }
 });
 
@@ -166,6 +168,7 @@ perBtn.addEventListener('click', () => {
   currentOperation = null;
   waitingForOperator = true;
   hasDot = false;
+  if (toClear) clear(cleanBtn)
 });
 
 function sum(num1 = 0, num2 = num1) {
@@ -194,19 +197,27 @@ function diff(num = 0) {
 
 function clear(e) {
   checkSize('operation');
+  if (e.target) e.target.innerText = 'AC';
+  else e.innerText = 'AC';
   visualizerInput.value = '';
   changeDisplay('0');
+  changeVisualizer('');
   currentValue = null
   lastValue = null;
   currentOperation = null;
-  e.target.innerText = 'AC';
   waitingForInput = true;
   waitingForOperator = false;
   hasDot = false;
+  toClear = false;
+  penValue = null;
+  lastOperation = null
 }
 
 function changeDisplay(num, ifChoice = false) {
-  if (num > 99999999999) displayInput.value = 'NaN';
+  if (num > 99999999999) {
+    displayInput.value = 'NaN';
+    toClear = true;
+  }
   else if (num.toString().length > 11) displayInput.value = toFixedEleven(num)[0];
   else displayInput.value = num
 }
@@ -243,7 +254,6 @@ function changeVisualizer(pen = 0, num1 = 0, type = sum) {
 }
 
 function toFixedEleven(...args) {
-  console.log(args);
   return args.map(num => {
     if (num.toString().length > 11) {
       let number;
@@ -263,3 +273,5 @@ window.addEventListener('keydown', (e) => {
   else key = document.querySelector(`button[data-key='${e.key}']`);
   if (key) key.click();
 });
+
+
