@@ -2,6 +2,15 @@ const displayInput = document.querySelector('.display-input');
 const visualizerInput = document.querySelector('.visualizer-input');
 const cleanBtn = document.querySelector('.clean-btn');
 const numBtns = document.querySelectorAll('.num-btn');
+const allBtn = document.querySelectorAll('button');
+const sumBtn = document.querySelector('.sum-btn');
+const subBtn = document.querySelector('.sub-btn');
+const divBtn = document.querySelector('.div-btn');
+const multiBtn = document.querySelector('.multi-btn');
+const diffBtn = document.querySelector('.diff-btn');
+const equalBtn = document.querySelector('.equal-btn');
+const perBtn = document.querySelector('.per-btn');
+
 let currentValue;
 let lastValue;
 let penValue;
@@ -9,32 +18,47 @@ let lastOperation;
 let currentOperation;
 let waitingForInput = true;
 let waitingForOperator = false;
+let hasDot = false;
 
 const handler = function(e) {
-  if (!waitingForOperator) {
+  if (e.target.getAttribute('value') === '.' && hasDot) {
+    return;
+  }
+  if (!waitingForOperator) { // blocks number interaction if true
     const eValue = e.target.getAttribute('value');
     if (eValue !== '0') cleanBtn.innerText = 'C';
     if (waitingForInput) {
-      changeDisplay(eValue);
+      if (e.target.getAttribute('value') === '.') changeDisplay('0.')
+      else changeDisplay(eValue);
+      if (currentValue) changeVisualizer(currentValue.toString());
       if (eValue !== '0' && displayInput.value !== '0') waitingForInput = false;
     } else displayInput.value += eValue;
+    if (e.target.getAttribute('value') === '.') {
+      hasDot = true;
+    }
   }
   checkSize();
 }
 
-function checkSize(type = 'num') {
-  console.log('checksize')
-  console.log(numBtns[0].getAttribute('listener'))
-  if (displayInput.value.length >= 9 && type === 'num') removeNumberListener();
-  if (type === 'operation') addNumberListener();
+window.onload = () => {
+  cleanBtn.innerText = 'AC'
+  if (displayInput.value.length < 11) addNumberListener();
+  changeDisplay('0');
+  preventStart();
+  visualizerInput.value = '';
 }
 
-if (displayInput.value != 0) cleanBtn.innerText = 'C';
-if (displayInput.value.length < 9) addNumberListener();
+function preventStart() {
+  allBtn.forEach(e => {
+    e.addEventListener('click', (evt) => {
+      evt.preventDefault();
+    })
+  });
+}
 
-window.onload = () => {
-  changeDisplay('0');
-  visualizerInput.value = '';
+function checkSize(type = 'num') {
+  if (displayInput.value.length >= 11 && type === 'num') removeNumberListener();
+  if (type === 'operation') addNumberListener();
 }
 
 function addNumberListener() {
@@ -49,31 +73,23 @@ function removeNumberListener() {
   });
 }
 
-const sumBtn = document.querySelector('.sum-btn');
-const subBtn = document.querySelector('.sub-btn');
-const divBtn = document.querySelector('.div-btn');
-const multiBtn = document.querySelector('.multi-btn');
-const diffBtn = document.querySelector('.diff-btn');
-const equalBtn = document.querySelector('.equal-btn');
-const perBtn = document.querySelector('.per-btn');
-
 function operators(nextOperation) {
   checkSize('operation');
   const inputValue = Number(displayInput.value);
   let newValue;
-  if (currentOperation) {
+  if (currentOperation && !waitingForInput) {
     newValue = currentOperation(currentValue, inputValue);
     if (newValue !== currentValue) {
       lastValue = inputValue;
       penValue = currentValue
       currentValue = newValue;
-      changeVisualizer(penValue, lastValue, currentValue, currentOperation);
+      changeVisualizer(penValue, lastValue, currentOperation);
       changeDisplay(currentValue)
       lastOperation = currentOperation;
       currentOperation = nextOperation;
-    } else {
-      currentOperation = nextOperation;
     }
+  } else {
+    currentOperation = nextOperation;
   }
   if (typeof currentValue !== 'number') {
     currentValue = inputValue;
@@ -88,6 +104,7 @@ function operators(nextOperation) {
   changeDisplay(currentValue);
   waitingForInput = true;
   waitingForOperator = false;
+  hasDot = false;
 }
 
 sumBtn.addEventListener('click', () => {
@@ -107,7 +124,7 @@ multiBtn.addEventListener('click', () => {
 });
 
 diffBtn.addEventListener('click', () => {
-  changeDisplay(diff(Number(displayInput.value)));
+  if (!waitingForInput) changeDisplay(diff(Number(displayInput.value)));
 });
 
 cleanBtn.addEventListener('click', (e) => {
@@ -120,8 +137,9 @@ equalBtn.addEventListener('click', () => {
     const inputValue = Number(displayInput.value);
     newValue = currentOperation(currentValue, inputValue)
     displayInput.value = currentValue;
-    changeVisualizer(currentValue, inputValue, newValue, currentOperation);
+    changeVisualizer(currentValue, inputValue, currentOperation);
     changeDisplay(newValue)
+    hasDot = false;
   }
 });
 
@@ -129,17 +147,17 @@ perBtn.addEventListener('click', () => {
   checkSize('operation');
   const inputValue = Number(displayInput.value)
   let newValue;
-  if (typeof currentValue !== 'number') {
+  if (typeof currentValue !== 'number') { //first Operation
     newValue = per(inputValue);
-    changeVisualizer(inputValue, 0, newValue, per)
+    changeVisualizer(inputValue, 0, per)
     changeDisplay(newValue);
   }
-  if (typeof currentValue === 'number') {
+  if (typeof currentValue === 'number') { // every Other operation
     currentValue = currentOperation(currentValue, inputValue);
     newValue = per(currentValue);
     lastValue = null;
     currentOperation = null;
-    changeVisualizer(currentValue, inputValue, newValue, currentOperation);
+    changeVisualizer(currentValue, inputValue, currentOperation);
     changeDisplay(newValue)
   }
   waitingForInput = true;
@@ -147,6 +165,7 @@ perBtn.addEventListener('click', () => {
   lastValue = null;
   currentOperation = null;
   waitingForOperator = true;
+  hasDot = false;
 });
 
 function sum(num1 = 0, num2 = num1) {
@@ -183,44 +202,64 @@ function clear(e) {
   e.target.innerText = 'AC';
   waitingForInput = true;
   waitingForOperator = false;
+  hasDot = false;
 }
 
 function changeDisplay(num, ifChoice = false) {
-  if (ifChoice) displayInput.value = num
-  else displayInput.value = toFixedNine(num);
+  if (num > 99999999999) displayInput.value = 'NaN';
+  else if (num.toString().length > 11) displayInput.value = toFixedEleven(num)[0];
+  else displayInput.value = num
 }
 
-function changeVisualizer(pen = 0, num2 = 0, num1 = 0, type = sum) {
-  // const toFixed = toFixedNine(pen, num1, num2);
+function changeVisualizer(pen = 0, num1 = 0, type = sum) {
+  const toFixed = toFixedEleven(pen, num1);
   if (typeof pen === 'string') {
-    visualizerInput.value = pen;
+    visualizerInput.value = toFixed[0];
     return;
   }
-  if ((type === sum || type === sub) && num2 === 0) return;
+  if ((type === sum || type === sub) && toFixed[1] === 0) return;
   switch (type) {
     case sum: {
-      visualizerInput.value = `${pen} + ${num2} = ${num1}`;
+      visualizerInput.value = `${toFixed[0]} + ${toFixed[1]} =`;
       break;
     }
     case sub: {
-      visualizerInput.value = `${pen} - ${num2} = ${num1}`;
+      visualizerInput.value = `${toFixed[0]} - ${toFixed[1]} =`;
       break;
     }
     case div: {
-      visualizerInput.value = `${pen} / ${num2} = ${num1}`;
+      visualizerInput.value = `${toFixed[0]} / ${toFixed[1]} =`;
       break;
     }
     case multi: {
-      visualizerInput.value = `${pen} x ${num2} = ${num1}`;
+      visualizerInput.value = `${toFixed[0]} x ${toFixed[1]} =`;
       break;
     }
     case per: {
-      visualizerInput.value = `${pen}% = ${num1}`;
+      visualizerInput.value = `${toFixed[0]}% =`;
       break;
     }
   }
 }
 
-function round () {
-  
+function toFixedEleven(...args) {
+  console.log(args);
+  return args.map(num => {
+    if (num.toString().length > 11) {
+      let number;
+      if (typeof num !== 'number') number = Number(num);
+      else number = num;
+      if (number.toString().split('.')[0].length === 10) return parseInt(number)
+      return number.toString().slice(0, 11);
+    }
+    return num;
+  })
 }
+
+window.addEventListener('keydown', (e) => {
+  if (displayInput.value != 0) cleanBtn.innerText = 'C';
+  let key;
+  if (e.key === ',') key = document.querySelector(`button[data-key='.']`);
+  else key = document.querySelector(`button[data-key='${e.key}']`);
+  if (key) key.click();
+});
