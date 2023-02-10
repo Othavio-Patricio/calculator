@@ -7,5 +7,5 @@ also a Backspace button where you can delete your last number without the necess
 It can do simple math like addition, subtraction, multiplication, division and percentage. Also it's possible to use negative numbers and decimal numbers!
 
 ## Collaborators:
-Oleksandr Chernokolov - https://github.com/BlackPrick 
+Oleksandr Chernokolov - https://github.com/BlackPrick <br>
 Othavio Patricio - https://github.com/Othavio-Patricio
