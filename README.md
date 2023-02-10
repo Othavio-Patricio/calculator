@@ -1,4 +1,4 @@
-# calculator
+# Calculator
 You can test it at https://othavio-patricio.github.io/calculator/
 
 It's a simple calculator with a second Visor where you can see your last operation. <br>
