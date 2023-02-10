@@ -8,6 +8,7 @@ const multiBtn = document.querySelector('.multi-btn');
 const diffBtn = document.querySelector('.diff-btn');
 const equalBtn = document.querySelector('.equal-btn');
 const perBtn = document.querySelector('.per-btn');
+const backBtn = document.querySelector('.back-btn');
 const numBtns = document.querySelectorAll('.num-btn');
 const allBtn = document.querySelectorAll('button');
 
@@ -19,6 +20,8 @@ let waitingForInput = true;
 let waitingForOperator = false;
 let hasDot = false;
 let toClear = false;
+let equalPressed = false;
+let fixedValue;
 
 window.onload = () => {
   cleanBtn.innerText = 'AC'
@@ -62,13 +65,15 @@ cleanBtn.addEventListener('click', (e) => {
 });
 
 equalBtn.addEventListener('click', () => {
-  if (toClear&& typeof currentValue !== 'number') {
+  if (equalPressed) {
     const inputValue = Number(displayInput.value);
-    newValue = currentOperation(inputValue, penValue)
-    changeVisualizer(inputValue, penValue, currentOperation);
+    newValue = currentOperation(inputValue, fixedValue)
+    changeVisualizer(inputValue, fixedValue, currentOperation);
     changeDisplay(newValue);
+    currentValue = newValue;
+    return;
   }
-  if (typeof currentValue === 'number' && !toClear) { // checks if is not 1º use
+  if (typeof currentValue === 'number' && !toClear) { // checks if is not 1º use and if not used before operator
     checkSize('operation');
     const inputValue = Number(displayInput.value);
     newValue = currentOperation(currentValue, inputValue)
@@ -79,10 +84,9 @@ equalBtn.addEventListener('click', () => {
     changeDisplay(newValue);
     if (displayInput.value === 'too big') return;
     changeVisualizer(currentValue, inputValue, currentOperation);
-    displayInput.value = currentValue;
-    currentValue = null;
-    penValue = inputValue;
-    toClear = true;
+    currentValue = newValue;
+    fixedValue = inputValue;
+    equalPressed = true;
   }
 });
 
@@ -90,52 +94,60 @@ perBtn.addEventListener('click', () => {
   checkSize('operation');
   const inputValue = Number(displayInput.value)
   let newValue;
-  if (typeof currentValue !== 'number') { //first Operation
+  if (typeof currentValue !== 'number' || (typeof currentValue === 'number' && waitingForInput)) { //first Operation
     newValue = per(inputValue);
     changeVisualizer(inputValue, 0, per)
-    changeDisplay(newValue);
   }
-  if (typeof currentValue === 'number') { // every Other operation
-    currentValue = currentOperation(currentValue, inputValue);
+  else { // every Other operation
+    if (!equalPressed) currentValue = currentOperation(currentValue, inputValue);
     if (currentValue === 'lmao') {
       lmaoHandler();
       return;
     }
     newValue = per(currentValue);
     lastValue = null;
-    currentOperation = null;
-    changeVisualizer(currentValue, inputValue, currentOperation);
-    changeDisplay(newValue)
+    changeVisualizer(currentValue, 0, per);
   }
+  if (equalPressed) equalPressed = false
+  changeDisplay(newValue);
   waitingForInput = true;
-  currentValue = null
-  lastValue = null;
   currentOperation = null;
   hasDot = false;
+  currentValue = newValue
   multiBtn.click();
   if (toClear) clear()
+});
+
+backBtn.addEventListener('click', () => {
+  if (displayInput.value !== '0' && displayInput.value && !waitingForInput && !equalPressed) {  
+    newValue = displayInput.value.slice(0, displayInput.value.length - 1);
+    if (!currentOperation && !newValue) cleanBtn.innerText = 'AC'; // checks if it is the first operation since last clear
+    if (!newValue) changeDisplay('0')
+    else changeDisplay(displayInput.value.slice(0, displayInput.value.length - 1));
+  }
+  if (equalPressed) clear();
 });
 
 function addNumberListener() {
   numBtns.forEach(e => {
     e.addEventListener('click', (btn) => {
-      if (toClear) clear();
+      if (toClear || equalPressed) clear();
       if (btn.target.getAttribute('value') === '.' && hasDot) return;
-      if (!waitingForOperator) { // blocks number interaction if true
+      if (!waitingForOperator) {
         const btnValue = btn.target.getAttribute('value');
-        if (btnValue !== '0') cleanBtn.innerText = 'C';
-        if (waitingForInput) { // asks if the last button pressed is a operator
-          firstNumberHandler(btnValue);
-          if (btnValue !== '0' && displayInput.value !== '0') waitingForInput = false;
-        } else displayInput.value += btnValue;
-        if (btnValue === '.') {
-          hasDot = true;
-        }
+        numbersAllowed(btnValue);
       }
       if (currentValue) changeVisualizer(currentValue.toString());
       checkSize();
     });
   });
+}
+
+function numbersAllowed(btnValue) {
+  if (btnValue !== '0') cleanBtn.innerText = 'C';
+  if (waitingForInput) firstNumberHandler(btnValue);
+  else displayInput.value += btnValue;
+  if (btnValue === '.') hasDot = true;
 }
 
 function firstNumberHandler(btnValue) {
@@ -156,12 +168,38 @@ function checkSize(type = 'num') {
   if (displayInput.value.length >= 11 && type === 'num') waitingForOperator = true;
 }
 
-function operators(nextOperation) {
-  if (toClear) clear()
+function clear() {
   checkSize('operation');
+  cleanBtn.innerText = 'AC';
+  changeDisplay('0');
+  changeVisualizer('');
+  currentValue = null
+  lastValue = null;
+  currentOperation = null;
+  waitingForInput = true;
+  waitingForOperator = false;
+  hasDot = false;
+  toClear = false;
+  penValue = null;
+  equalPressed = false;
+  fixedValue = null
+}
+
+function operators(nextOperation) {
+  if (toClear) clear();
+
+  if (equalPressed) {
+    equalPressed = false;
+    currentOperation = nextOperation;
+    waitingForInput = true;
+    waitingForOperator = false;
+    hasDot = false;
+    return;
+  }
+
   const inputValue = Number(displayInput.value);
-  let newValue;
-  if (currentOperation && !waitingForInput) {
+  if (currentOperation && !waitingForInput) { // checks if is the first time we click in an operator this time but is not our first operation
+    let newValue;
     newValue = currentOperation(currentValue, inputValue);
     if (newValue === 'lmao') {
       lmaoHandler();
@@ -177,12 +215,14 @@ function operators(nextOperation) {
   } else {
     currentOperation = nextOperation;
   }
-  if (typeof currentValue === 'number' && !currentOperation) currentOperation = nextOperation;
+
+  if (typeof currentValue === 'number' && !currentOperation) currentOperation = nextOperation; // checks if it is the first operation since last clear
   if (typeof currentValue !== 'number') {
     currentValue = inputValue;
     currentOperation = nextOperation;
     changeVisualizer(displayInput.value)
   }
+
   changeDisplay(currentValue);
   waitingForInput = true;
   waitingForOperator = false;
@@ -220,22 +260,6 @@ function per(num = 0) {
 
 function diff(num = 0) {
   return -num;
-}
-
-function clear() {
-  checkSize('operation');
-  cleanBtn.innerText = 'AC';
-  visualizerInput.value = '';
-  changeDisplay('0');
-  changeVisualizer('');
-  currentValue = null
-  lastValue = null;
-  currentOperation = null;
-  waitingForInput = true;
-  waitingForOperator = false;
-  hasDot = false;
-  toClear = false;
-  penValue = null;
 }
 
 function changeDisplay(num) {
