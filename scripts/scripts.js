@@ -13,8 +13,6 @@ const numBtns = document.querySelectorAll('.num-btn');
 const allBtn = document.querySelectorAll('button');
 
 let currentValue;
-let lastValue;
-let penValue;
 let currentOperation;
 let waitingForInput = true;
 let waitingForOperator = false;
@@ -24,15 +22,15 @@ let equalPressed = false;
 let fixedValue;
 
 window.onload = () => {
-  cleanBtn.innerText = 'AC'
+  changeClearButton();
   addNumberListener();
   changeDisplay('0');
   preventDefaultStart();
-  visualizerInput.value = '';
+  changeVisualizer('');
 }
 
 window.addEventListener('keydown', (e) => {
-  if (displayInput.value != 0) cleanBtn.innerText = 'C';
+  if (displayInput.value != 0) changeClearButton('C');
   let key;
   if (e.key === ',') key = document.querySelector(`button[data-key='.']`);
   else key = document.querySelector(`button[data-key='${e.key}']`);
@@ -56,8 +54,19 @@ multiBtn.addEventListener('click', () => {
 });
 
 diffBtn.addEventListener('click', () => {
-  if (toClear) clear()
-  if (!waitingForInput && displayInput.value.length < 11) changeDisplay(diff(Number(displayInput.value)));
+  if (toClear) clear();
+  if (!waitingForInput && displayInput.value.length < 11) {
+    const inputValue = Number(displayInput.value);
+    const newValue = diff(inputValue);
+    changeDisplay(newValue);
+  }
+  if (waitingForInput && displayInput.value.length < 11) {
+    const inputValue = Number(displayInput.value);
+    const newValue = diff(inputValue);
+    changeDisplay(newValue);
+    currentValue = newValue;
+    sumBtn.click();
+  }
 });
 
 cleanBtn.addEventListener('click', (e) => {
@@ -65,6 +74,10 @@ cleanBtn.addEventListener('click', (e) => {
 });
 
 equalBtn.addEventListener('click', () => {
+  if (toClear) {
+    clear();
+    return;
+  }
   if (equalPressed) {
     const inputValue = Number(displayInput.value);
     newValue = currentOperation(inputValue, fixedValue)
@@ -82,11 +95,12 @@ equalBtn.addEventListener('click', () => {
       return;
     }
     changeDisplay(newValue);
-    if (displayInput.value === 'too big') return;
+    if (displayInput.value.includes('too')) return;
     changeVisualizer(currentValue, inputValue, currentOperation);
     currentValue = newValue;
     fixedValue = inputValue;
     equalPressed = true;
+    waitingForInput = true;
   }
 });
 
@@ -105,7 +119,6 @@ perBtn.addEventListener('click', () => {
       return;
     }
     newValue = per(currentValue);
-    lastValue = null;
     changeVisualizer(currentValue, 0, per);
   }
   if (equalPressed) equalPressed = false
@@ -113,15 +126,19 @@ perBtn.addEventListener('click', () => {
   waitingForInput = true;
   currentOperation = null;
   hasDot = false;
-  currentValue = newValue
+  currentValue = newValue;
   multiBtn.click();
   if (toClear) clear()
 });
 
 backBtn.addEventListener('click', () => {
+  if (toClear) {
+    clear();
+    return;
+  }
   if (displayInput.value !== '0' && displayInput.value && !waitingForInput && !equalPressed) {  
     newValue = displayInput.value.slice(0, displayInput.value.length - 1);
-    if (!currentOperation && !newValue) cleanBtn.innerText = 'AC'; // checks if it is the first operation since last clear
+    if (!currentOperation && !newValue) changeClearButton(); // checks if it is the first operation since last clear
     if (!newValue) {
       changeDisplay('0')
       waitingForInput = true;
@@ -140,14 +157,14 @@ function addNumberListener() {
         const btnValue = btn.target.getAttribute('value');
         numbersAllowed(btnValue);
       }
-      if (currentValue) changeVisualizer(currentValue.toString());
+      if (currentValue) changeVisualizer(currentValue.toString(), 0, currentOperation);
       checkSize();
     });
   });
 }
 
 function numbersAllowed(btnValue) {
-  if (btnValue !== '0') cleanBtn.innerText = 'C';
+  if (btnValue !== '0') changeClearButton('C');
   if (waitingForInput) firstNumberHandler(btnValue);
   else displayInput.value += btnValue;
   if (btnValue === '.') hasDot = true;
@@ -173,24 +190,24 @@ function checkSize(type = 'num') {
 
 function clear() {
   checkSize('operation');
-  cleanBtn.innerText = 'AC';
+  changeClearButton();
   changeDisplay('0');
   changeVisualizer('');
   currentValue = null
-  lastValue = null;
   currentOperation = null;
   waitingForInput = true;
   waitingForOperator = false;
   hasDot = false;
   toClear = false;
-  penValue = null;
   equalPressed = false;
   fixedValue = null
 }
 
 function operators(nextOperation) {
-  if (toClear) clear();
-
+  if (toClear) {
+    clear();
+    return;
+  }
   if (equalPressed) {
     equalPressed = false;
     currentOperation = nextOperation;
@@ -209,10 +226,8 @@ function operators(nextOperation) {
       return;
     }
     if (newValue !== currentValue) {
-      lastValue = inputValue;
-      penValue = currentValue
+      changeVisualizer(currentValue, inputValue, currentOperation);
       currentValue = newValue;
-      changeVisualizer(penValue, lastValue, currentOperation);
       currentOperation = nextOperation;
     }
   } else {
@@ -223,9 +238,8 @@ function operators(nextOperation) {
   if (typeof currentValue !== 'number') {
     currentValue = inputValue;
     currentOperation = nextOperation;
-    changeVisualizer(displayInput.value)
+    changeVisualizer(displayInput.value, 0, nextOperation)
   }
-
   changeDisplay(currentValue);
   waitingForInput = true;
   waitingForOperator = false;
@@ -265,46 +279,74 @@ function diff(num = 0) {
   return -num;
 }
 
+function changeClearButton(type = 'AC') {
+  if (type === 'C') cleanBtn.innerText = 'C';
+  else cleanBtn.innerText = 'AC';
+}
+
 function changeDisplay(num) {
   const MAX_VALUE = 99999999999;
+  const MIN_VALUE = -9999999999;
   if (num > MAX_VALUE) {
     displayInput.value = 'too big';
     changeVisualizer('┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻')
+    toClear = true;
+  }
+  else if (num < MIN_VALUE) {
+    displayInput.value = 'too small';
+    changeVisualizer(' ┐(´⌒｀)┌')
     toClear = true;
   }
   else if (num.toString().length > 11) displayInput.value = toFixedEleven(num)[0];
   else displayInput.value = num
 }
 
-function changeVisualizer(pen = 0, num1 = 0, type = sum) {
+function changeVisualizer(pen = 0, num1 = 0, type = null) {
   const toFixed = toFixedEleven(pen, num1);
-  if (typeof pen === 'string') {
+  if (typeof pen === 'string' && !type) {
     visualizerInput.value = toFixed[0];
+    return;
+  }
+  if (typeof pen === 'string' && type) {
+    switch (type) {
+      case sum: 
+        visualizerInput.value = `${toFixed[0]} +`;
+        break;
+      case sub: 
+        visualizerInput.value = `${toFixed[0]} -`;
+        break;
+      case div: 
+        visualizerInput.value = `${toFixed[0]} /`;
+        break;
+      case multi: 
+        visualizerInput.value = `${toFixed[0]} x`;
+        break;
+    }
     return;
   }
   if ((type === sum || type === sub) && toFixed[1] === 0) return;
   switch (type) {
-    case sum: {
+    case sum: 
       visualizerInput.value = `${toFixed[0]} + ${toFixed[1]} =`;
       break;
-    }
-    case sub: {
+    case sub: 
       visualizerInput.value = `${toFixed[0]} - ${toFixed[1]} =`;
       break;
-    }
-    case div: {
+    case div: 
       visualizerInput.value = `${toFixed[0]} / ${toFixed[1]} =`;
       break;
-    }
-    case multi: {
+    case multi: 
       visualizerInput.value = `${toFixed[0]} x ${toFixed[1]} =`;
       break;
-    }
-    case per: {
+    case per: 
       visualizerInput.value = `${toFixed[0]}% =`;
       break;
-    }
   }
+}
+
+function equalsCondition(pen, num1, toFixed) {
+  if (pen === toFixed[0] && num1 === toFixed[1]) return '=';
+  return '≃';
 }
 
 function toFixedEleven(...args) {
