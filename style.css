@@ -35,6 +35,7 @@ body {
 form {
     padding: 1% 0.3%;
     border-radius: 1em;
+    position: relative;
 }
 
 table {
@@ -77,10 +78,6 @@ tbody tr {
     grid-template-columns: repeat(4, 1fr);
 }
 
-tbody tr:last-child {
-    grid-template-columns: 2fr 1fr 1fr;
-}
-
 tbody td {
     display: inline-flex;
     flex-direction: row;
@@ -89,7 +86,7 @@ tbody td {
     overflow: hidden;
 }
 
-tbody td:not(.double)::before {
+tbody td::before {
     content: "";
     padding-top: 100%;
     float: left;
@@ -132,10 +129,4 @@ tbody button::after {
 tbody button:hover::after {
     opacity: 1;
     transition: 0.5s;
-}
-
-.double button {
-    width: 90%;
-    text-align: start;
-    padding: 0 15%;
 }
