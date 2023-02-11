@@ -122,7 +122,10 @@ backBtn.addEventListener('click', () => {
   if (displayInput.value !== '0' && displayInput.value && !waitingForInput && !equalPressed) {  
     newValue = displayInput.value.slice(0, displayInput.value.length - 1);
     if (!currentOperation && !newValue) cleanBtn.innerText = 'AC'; // checks if it is the first operation since last clear
-    if (!newValue) changeDisplay('0')
+    if (!newValue) {
+      changeDisplay('0')
+      waitingForInput = true;
+    }
     else changeDisplay(displayInput.value.slice(0, displayInput.value.length - 1));
   }
   if (equalPressed) clear();
