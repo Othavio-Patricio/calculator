@@ -136,10 +136,12 @@ backBtn.addEventListener('click', () => {
     clear();
     return;
   }
-  if (displayInput.value !== '0' && displayInput.value && !waitingForInput && !equalPressed) {  
+  if (displayInput.value !== '0' && displayInput.value && !waitingForInput && !equalPressed) {
+    const isDot = displayInput.value[displayInput.value.length - 1];
     newValue = displayInput.value.slice(0, displayInput.value.length - 1);
     if (!currentOperation && !newValue) changeClearButton(); // checks if it is the first operation since last clear
-    if (!newValue) {
+    if (isDot === '.') hasDot = false;
+    if (!newValue || newValue === '-') {
       changeDisplay('0')
       waitingForInput = true;
     }
@@ -342,11 +344,6 @@ function changeVisualizer(pen = 0, num1 = 0, type = null) {
       visualizerInput.value = `${toFixed[0]}% =`;
       break;
   }
-}
-
-function equalsCondition(pen, num1, toFixed) {
-  if (pen === toFixed[0] && num1 === toFixed[1]) return '=';
-  return '≃';
 }
 
 function toFixedEleven(...args) {
