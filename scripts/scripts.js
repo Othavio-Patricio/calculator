@@ -139,10 +139,11 @@ backBtn.addEventListener('click', () => {
   if (displayInput.value !== '0' && displayInput.value && !waitingForInput && !equalPressed) {
     const isDot = displayInput.value[displayInput.value.length - 1];
     newValue = displayInput.value.slice(0, displayInput.value.length - 1);
-    if (!currentOperation && !newValue) changeClearButton(); // checks if it is the first operation since last clear
+    console.log(newValue)
+    if (!currentOperation && (!newValue || newValue === '0')) changeClearButton(); // checks if it is the first operation since last clear
     if (isDot === '.') hasDot = false;
     if (!newValue || newValue === '-') {
-      changeDisplay('0')
+      changeDisplay('0');
       waitingForInput = true;
     }
     else changeDisplay(displayInput.value.slice(0, displayInput.value.length - 1));
