@@ -31,7 +31,6 @@ window.onload = () => {
 
 window.addEventListener('keydown', (e) => {
   let key;
-  console.log(e.key)
   if (e.key === ',') key = document.querySelector(`button[data-key='.']`);
   else if (e.key === 'Enter') key = document.querySelector(`button[data-key='=']`);
   else key = document.querySelector(`button[data-key='${e.key}']`);
