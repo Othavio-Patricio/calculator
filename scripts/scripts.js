@@ -30,9 +30,10 @@ window.onload = () => {
 }
 
 window.addEventListener('keydown', (e) => {
-  if (displayInput.value != 0) changeClearButton('C');
   let key;
+  console.log(e.key)
   if (e.key === ',') key = document.querySelector(`button[data-key='.']`);
+  else if (e.key === 'Enter') key = document.querySelector(`button[data-key='=']`);
   else key = document.querySelector(`button[data-key='${e.key}']`);
   if (key) key.click();
 });
@@ -139,7 +140,6 @@ backBtn.addEventListener('click', () => {
   if (displayInput.value !== '0' && displayInput.value && !waitingForInput && !equalPressed) {
     const isDot = displayInput.value[displayInput.value.length - 1];
     newValue = displayInput.value.slice(0, displayInput.value.length - 1);
-    console.log(newValue)
     if (!currentOperation && (!newValue || newValue === '0')) changeClearButton(); // checks if it is the first operation since last clear
     if (isDot === '.') hasDot = false;
     if (!newValue || newValue === '-') {
